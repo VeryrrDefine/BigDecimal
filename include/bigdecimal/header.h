@@ -18,13 +18,18 @@ namespace BigDecimal {
       BigDecimal operator-(const BigDecimal& other) const;
       BigDecimal operator*(const BigDecimal& other) const;
       BigDecimal operator/(const BigDecimal& other) const;
+      bool isnan() const;
       void normalize();
-  static int8_t compare(const BigDecimal &a, const BigDecimal &b);
-  bool operator<(const BigDecimal &b) const;
-  bool operator<=(const BigDecimal &b) const;
-  bool operator>(const BigDecimal &b) const;
-  bool operator>=(const BigDecimal &b) const;
-  bool operator!=(const BigDecimal &b) const;
+      static int8_t compare(const BigDecimal &a, const BigDecimal &b);
+      bool operator<(const BigDecimal &b) const;
+      bool operator<=(const BigDecimal &b) const;
+      bool operator>(const BigDecimal &b) const;
+      bool operator>=(const BigDecimal &b) const;
+      bool operator!=(const BigDecimal &b) const;
+      
+      BigDecimal max(const BigDecimal &b) const;
+      BigDecimal min(const BigDecimal &b) const;
+
       uint64_t layer;
       double magnitude;
       int8_t sign;

@@ -5,41 +5,8 @@
 
 #define MAX_SAFE_INTEGER 9007199254740991.00
 
+#include "bigdecimal/header.h"
 namespace BigDecimal {
-class BigDecimal {
-public:
-  BigDecimal();
-  BigDecimal(int num);
-  BigDecimal(double num);
-  BigDecimal(const BigDecimal &num);
-  bool operator==(const BigDecimal &other) const;
-  bool operator==(const int &other) const;
-
-  BigDecimal operator-() const;
-
-  BigDecimal &operator=(const BigDecimal &other);
-  BigDecimal operator+(const BigDecimal &other) const;
-  BigDecimal operator-(const BigDecimal &other) const;
-  BigDecimal operator*(const BigDecimal &other) const;
-  BigDecimal operator/(const BigDecimal &other) const;
-
-  bool operator<(const BigDecimal &b) const;
-  bool operator<=(const BigDecimal &b) const;
-  bool operator>(const BigDecimal &b) const;
-  bool operator>=(const BigDecimal &b) const;
-  bool operator!=(const BigDecimal &b) const;
-
-  bool isnan() const;
-
-  void normalize();
-  
-  static int8_t compare(const BigDecimal &a, const BigDecimal &b);
-
-  uint64_t layer;
-  double magnitude;
-  int8_t sign;
-};
-
 double log10add(double x, double y) {
   /*
    * 10^x+10^y=10^z(x>=y)
@@ -50,6 +17,15 @@ double log10add(double x, double y) {
   return t + log10(pow(10, x - t) + pow(10, y - t));
 }
 
+double log10minus(double x, double y) {
+  /*
+   * 10^x-10^y=10^z(x>=y)
+   * t=fl(x)
+   * log10(10^(x-t)-10^(y-t))+t
+   * */
+  double t = floor(std::max(x, y));
+  return t + log10(pow(10, x - t) - pow(10, y - t));
+}
 BigDecimal::BigDecimal() {
   layer = 0;
   magnitude = 0.0;
@@ -104,7 +80,7 @@ void BigDecimal::normalize() {
   }
   else if (magnitude == 0)
     sign = 0;
-  if (::isnan(magnitude)) {
+  if (std::isnan(magnitude)) {
     sign = 0;
     layer = 0;
   }
@@ -114,7 +90,7 @@ void BigDecimal::normalize() {
   }
 }
 
-bool BigDecimal::isnan() const { return ::isnan(this->magnitude); }
+bool BigDecimal::isnan() const { return std::isnan(this->magnitude); }
 
 BigDecimal BigDecimal::operator-() const {
   BigDecimal result = *this;
@@ -164,21 +140,63 @@ BigDecimal BigDecimal::operator+(const BigDecimal &other) const {
   
   BigDecimal result(1);
   
-  if (this->sign == other.sign) {
-    result.magnitude = this->magnitude + other.magnitude;
+  if (this->sign == 1 && other.sign == 1) {
+    const BigDecimal* big = *this>other ? this : &other;
 
-    result.sign = other.sign;
-  } else if (this->sign == 1 && other.sign == -1)
-    result.magnitude = this->magnitude - other.magnitude;
+    const BigDecimal* small = big==this?&other:this;
+
+    if (big->layer==0&&small->layer == 0) {
+      result.magnitude = big->magnitude + small->magnitude;
+    }
+    if (big->layer==1) {
+      double smalllog10 = small->layer==1?small->magnitude : log10(small->magnitude);
+      result.layer=1;
+      result.magnitude =log10add(big->magnitude, small->magnitude);
+    }
+    result.sign = 1;
+  } else if (this->sign == 1 && other.sign == -1){
+    return *this-(-other); 
+  }
   else if (this->sign == -1 && other.sign == 1)
     return other + *this;
+  else if (this->sign == -1 && other.sign == -1) // -a+(-b) = -(a+b)
+    return -(-*this+(-other));
   result.normalize();
   return result;
 }
 
 BigDecimal BigDecimal::operator-(const BigDecimal &other) const {
-  BigDecimal result = (*this) + (-other);
+  /*BigDecimal result = (*this) + (-other);
   result.normalize();
+  return result;*/
+  BigDecimal result(0);
+  if (*this == 0) return -other;
+  if (other == 0) return *this;
+  if (*this==other) return *new BigDecimal(0);
+  if (this->sign == 1 && other.sign == 1) {
+    // a-b, 
+    // c = -a
+    // d = -b
+    // c-d = -a-(-b) = -a+b 0 b-a = -d - (-c)
+    //
+    if (*this>other) {
+      //TODO: minusing
+      if (this->layer==0 && other.layer == 0) {
+        result.magnitude = this->magnitude-other.magnitude;
+      }
+      if (this->layer==1) {
+        double otherlog10 = other.layer==1 ? log10(other.magnitude) : other.magnitude;
+        result.layer = 1;
+        result.magnitude = log10minus(this->magnitude, otherlog10);
+      }
+      result.sign = 1;
+
+    } else {
+      return -(other-*this);
+    }
+  } else if (this->sign == 1 && other.sign == -1) return *this+(-other);
+  else if(this->sign==-1 && other.sign == 1) return -(-(*this)+other);
+  else if (this->sign==-1 && other.sign == -1)  return (-other)-(-*this);
   return result;
 }
 
@@ -222,6 +240,16 @@ int8_t BigDecimal::compare(const BigDecimal &a, const BigDecimal &b) {
   if (a.layer != b.layer) return a.layer > b.layer ? -1 : 1;
   if (a.magnitude != b.magnitude) return a.magnitude > b.magnitude ? -1 : 1;
   return 0;
+}
+
+BigDecimal BigDecimal::max(const BigDecimal &b) const {
+  if (*this<b) return b;
+  return *this;
+};
+
+BigDecimal BigDecimal::min(const BigDecimal &b) const {
+  if (*this>=b) return *this;
+  return b;
 }
 
 } // namespace BigDecimal
