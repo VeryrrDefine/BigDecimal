@@ -16,6 +16,10 @@ if [ ! -d "$buildFolderPath" ]; then
   echo "build folder created."
 fi
 
+CXXCOMP=$PREFIX/bin/g++
+if [ -z $PREFIX ]; then
+  CXXCOMP = /usr/bin/g++
+fi
 cmake -G "Unix Makefiles" -D CMAKE_CXX_COMPILER=$PREFIX/bin/g++ -S . -B ./build/
 
 if [ $? -eq 0 ]; then

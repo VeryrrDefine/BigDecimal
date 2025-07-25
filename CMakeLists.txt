@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27.0)
+cmake_minimum_required(VERSION 3.10.0)
 project(bigdecimal VERSION 0.1.1 LANGUAGES CXX)
 
 # specify the C++ standard
@@ -12,12 +12,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(bigdecimal SHARED src/bigdecimal.cpp)
 
-add_executable(bigdecimal_tests tests/test_1.cpp)
+add_executable(bigdecimal_tests tests/test_1.cpp tests/test_2.cpp)
 
 target_include_directories(bigdecimal
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
 )
 
 include(FetchContent)

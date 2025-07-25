@@ -29,7 +29,8 @@ namespace BigDecimal {
       
       BigDecimal max(const BigDecimal &b) const;
       BigDecimal min(const BigDecimal &b) const;
-
+    
+      BigDecimal abs() const;
       uint64_t layer;
       double magnitude;
       int8_t sign;

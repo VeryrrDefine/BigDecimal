@@ -4,8 +4,10 @@
 #include <stdexcept>
 
 #define MAX_SAFE_INTEGER 9007199254740991.00
-
+#define MSI_REC 1.1102230246251565e-16
+#define MSI_LOG10 log10(MAX_SAFE_INTEGER)
 #include "bigdecimal/header.h"
+
 namespace BigDecimal {
 double log10add(double x, double y) {
   /*
@@ -74,11 +76,7 @@ BigDecimal::BigDecimal(const BigDecimal &num) {
 }
 
 void BigDecimal::normalize() {
-  if (magnitude < 0) {
-    magnitude = -magnitude;
-    sign = -sign;
-  }
-  else if (magnitude == 0)
+  if (magnitude == 0)
     sign = 0;
   if (std::isnan(magnitude)) {
     sign = 0;
@@ -88,9 +86,31 @@ void BigDecimal::normalize() {
     layer++;
     magnitude = log10(magnitude);
   }
+  if (layer==0 && magnitude<MSI_REC) {
+    layer++;
+    magnitude = -log10(1/magnitude);
+  }
+  if (layer>=1 && magnitude<=-MAX_SAFE_INTEGER) {
+    layer++;
+    magnitude = -log10(-magnitude);
+  }
+  if (layer>=1 && magnitude < MSI_LOG10 && magnitude > 0) {
+    layer--;
+    magnitude=pow(10, magnitude);
+  }
+  if (layer>=2 && magnitude > -MSI_LOG10 && magnitude < 0) {
+    layer--;
+    magnitude=-pow(10, -magnitude);
+  }
+  if (layer==1 && magnitude > -MSI_LOG10 && magnitude < 0) {
+    layer--;
+    magnitude=pow(10, magnitude);
+  }
 }
 
-bool BigDecimal::isnan() const { return std::isnan(this->magnitude); }
+bool BigDecimal::isnan() const { 
+  return std::isnan(this->magnitude); 
+}
 
 BigDecimal BigDecimal::operator-() const {
   BigDecimal result = *this;
@@ -206,7 +226,17 @@ BigDecimal BigDecimal::operator*(const BigDecimal &other) const {
     return result;
   if (other == 0)
     return result;
-  result.magnitude = this->magnitude * other.magnitude;
+  BigDecimal thisabs = this->abs(); 
+  BigDecimal otherabs = other.abs();
+  BigDecimal* larger = thisabs > otherabs ? &thisabs : &otherabs;
+  BigDecimal* smaller = larger==&thisabs?&otherabs:&thisabs;
+  if (larger->layer==0)
+    result.magnitude = larger->magnitude * smaller->magnitude;
+  else if (larger->layer==1) {
+    double smallerlog10 = smaller->layer==0 ? log10(smaller->magnitude) : smaller->magnitude;
+    result.magnitude = larger->magnitude+smallerlog10;
+    result.layer=1;
+  }
   result.sign = this->sign * other.sign;
   result.normalize();
   return result;
@@ -225,6 +255,12 @@ BigDecimal BigDecimal::operator/(const BigDecimal &other) const {
   return result;
 }
 
+BigDecimal BigDecimal::abs() const {
+  if (*this==0) return *this;
+  BigDecimal result = *this;
+  result.sign = 1;
+  return result;
+}
 /*
  * a<b  => >0
  * a==b => 0

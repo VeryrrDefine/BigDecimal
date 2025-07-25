@@ -5,8 +5,7 @@ A c++ library to
 The class `BigDecimal` 实例 has 3 non-function properties:
 `uint64_t layer`, `int8_t sign` and `double magnitude`
 
-they composite to a number `sign` * 10^10^...10^`magnitude` (there are `layer` 10^'s)
-
+they composite to a number `sign` * 10^10^...10^`|magnitude|` (there are `layer` 10^'s, number is ^-1 when magnitude<0)
 This project doesn't completed yet because I don't know how to implement it
 ## Usage
 ```cpp
