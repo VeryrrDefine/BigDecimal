@@ -77,8 +77,7 @@ void BigDecimal::normalize() {
   if (magnitude < 0) {
     magnitude = -magnitude;
     sign = -sign;
-  }
-  else if (magnitude == 0)
+  } else if (magnitude == 0)
     sign = 0;
   if (std::isnan(magnitude)) {
     sign = 0;
@@ -98,31 +97,17 @@ BigDecimal BigDecimal::operator-() const {
   return result;
 }
 
-bool BigDecimal::operator==(const BigDecimal &other) const { 
-  return this->layer == other.layer 
-    && this->magnitude == other.magnitude 
-    && this->sign == other.sign;
-}
+bool BigDecimal::operator==(const BigDecimal &other) const { return this->layer == other.layer && this->magnitude == other.magnitude && this->sign == other.sign; }
 
 bool BigDecimal::operator==(const int &other) const {
   BigDecimal decimal = *new BigDecimal(other);
   return *this == decimal;
 }
-bool BigDecimal::operator<(const BigDecimal &other) const {
-  return BigDecimal::compare(*this, other) > 0;
-}
-bool BigDecimal::operator<=(const BigDecimal &other) const {
-  return BigDecimal::compare(*this, other) >=0;
-}
-bool BigDecimal::operator>(const BigDecimal &other) const {
-  return BigDecimal::compare(*this, other) <0;
-}
-bool BigDecimal::operator>=(const BigDecimal &other) const {
-  return BigDecimal::compare(*this, other) <= 0;
-}
-bool BigDecimal::operator!=(const BigDecimal &other) const {
-  return BigDecimal::compare(*this, other) != 0;
-}
+bool BigDecimal::operator<(const BigDecimal &other) const { return BigDecimal::compare(*this, other) > 0; }
+bool BigDecimal::operator<=(const BigDecimal &other) const { return BigDecimal::compare(*this, other) >= 0; }
+bool BigDecimal::operator>(const BigDecimal &other) const { return BigDecimal::compare(*this, other) < 0; }
+bool BigDecimal::operator>=(const BigDecimal &other) const { return BigDecimal::compare(*this, other) <= 0; }
+bool BigDecimal::operator!=(const BigDecimal &other) const { return BigDecimal::compare(*this, other) != 0; }
 BigDecimal &BigDecimal::operator=(const BigDecimal &other) {
   if (this != &other) {
     this->layer = other.layer;
@@ -137,30 +122,29 @@ BigDecimal BigDecimal::operator+(const BigDecimal &other) const {
     return *new BigDecimal(other);
   if (other == 0)
     return *new BigDecimal(*this);
-  
+
   BigDecimal result(1);
-  
+
   if (this->sign == 1 && other.sign == 1) {
-    const BigDecimal* big = *this>other ? this : &other;
+    const BigDecimal *big = *this > other ? this : &other;
 
-    const BigDecimal* small = big==this?&other:this;
+    const BigDecimal *small = big == this ? &other : this;
 
-    if (big->layer==0&&small->layer == 0) {
+    if (big->layer == 0 && small->layer == 0) {
       result.magnitude = big->magnitude + small->magnitude;
     }
-    if (big->layer==1) {
-      double smalllog10 = small->layer==1?small->magnitude : log10(small->magnitude);
-      result.layer=1;
-      result.magnitude =log10add(big->magnitude, small->magnitude);
+    if (big->layer == 1) {
+      double smalllog10 = small->layer == 1 ? small->magnitude : log10(small->magnitude);
+      result.layer = 1;
+      result.magnitude = log10add(big->magnitude, small->magnitude);
     }
     result.sign = 1;
-  } else if (this->sign == 1 && other.sign == -1){
-    return *this-(-other); 
-  }
-  else if (this->sign == -1 && other.sign == 1)
+  } else if (this->sign == 1 && other.sign == -1) {
+    return *this - (-other);
+  } else if (this->sign == -1 && other.sign == 1)
     return other + *this;
   else if (this->sign == -1 && other.sign == -1) // -a+(-b) = -(a+b)
-    return -(-*this+(-other));
+    return -(-*this + (-other));
   result.normalize();
   return result;
 }
@@ -170,33 +154,39 @@ BigDecimal BigDecimal::operator-(const BigDecimal &other) const {
   result.normalize();
   return result;*/
   BigDecimal result(0);
-  if (*this == 0) return -other;
-  if (other == 0) return *this;
-  if (*this==other) return *new BigDecimal(0);
+  if (*this == 0)
+    return -other;
+  if (other == 0)
+    return *this;
+  if (*this == other)
+    return *new BigDecimal(0);
   if (this->sign == 1 && other.sign == 1) {
-    // a-b, 
+    // a-b,
     // c = -a
     // d = -b
     // c-d = -a-(-b) = -a+b 0 b-a = -d - (-c)
     //
-    if (*this>other) {
-      //TODO: minusing
-      if (this->layer==0 && other.layer == 0) {
-        result.magnitude = this->magnitude-other.magnitude;
+    if (*this > other) {
+      // TODO: minusing
+      if (this->layer == 0 && other.layer == 0) {
+        result.magnitude = this->magnitude - other.magnitude;
       }
-      if (this->layer==1) {
-        double otherlog10 = other.layer==1 ? log10(other.magnitude) : other.magnitude;
+      if (this->layer == 1) {
+        double otherlog10 = other.layer == 1 ? log10(other.magnitude) : other.magnitude;
         result.layer = 1;
         result.magnitude = log10minus(this->magnitude, otherlog10);
       }
       result.sign = 1;
 
     } else {
-      return -(other-*this);
+      return -(other - *this);
     }
-  } else if (this->sign == 1 && other.sign == -1) return *this+(-other);
-  else if(this->sign==-1 && other.sign == 1) return -(-(*this)+other);
-  else if (this->sign==-1 && other.sign == -1)  return (-other)-(-*this);
+  } else if (this->sign == 1 && other.sign == -1)
+    return *this + (-other);
+  else if (this->sign == -1 && other.sign == 1)
+    return -(-(*this) + other);
+  else if (this->sign == -1 && other.sign == -1)
+    return (-other) - (-*this);
   return result;
 }
 
@@ -232,25 +222,30 @@ BigDecimal BigDecimal::operator/(const BigDecimal &other) const {
  */
 int8_t BigDecimal::compare(const BigDecimal &a, const BigDecimal &b) {
   if (a.sign != b.sign) {
-    return b.sign-a.sign;
+    return b.sign - a.sign;
   }
-  if (a.sign == 0 && b.sign == 0) return 0;
-  else if (a.sign == -1 && b.sign == -1) return BigDecimal::compare(-b, -a);
-  
-  if (a.layer != b.layer) return a.layer > b.layer ? -1 : 1;
-  if (a.magnitude != b.magnitude) return a.magnitude > b.magnitude ? -1 : 1;
+  if (a.sign == 0 && b.sign == 0)
+    return 0;
+  else if (a.sign == -1 && b.sign == -1)
+    return BigDecimal::compare(-b, -a);
+
+  if (a.layer != b.layer)
+    return a.layer > b.layer ? -1 : 1;
+  if (a.magnitude != b.magnitude)
+    return a.magnitude > b.magnitude ? -1 : 1;
   return 0;
 }
 
 BigDecimal BigDecimal::max(const BigDecimal &b) const {
-  if (*this<b) return b;
+  if (*this < b)
+    return b;
   return *this;
 };
 
 BigDecimal BigDecimal::min(const BigDecimal &b) const {
-  if (*this>=b) return *this;
+  if (*this >= b)
+    return *this;
   return b;
 }
 
 } // namespace BigDecimal
-  //
